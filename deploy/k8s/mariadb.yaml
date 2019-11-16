@@ -1,0 +1,59 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Unique key of the Deployment instance
+  name: mariadb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        # Apply this label to pods and default the Deployment label selector to this value
+        app: mariadb
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:10.4.0
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "password"
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - mountPath: /etc/mysql/conf.d
+              name: mariadb-storage
+              subPath: conf
+            - mountPath: /var/lib/mysql
+              name: mariadb-storage
+              subPath: data
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: mariadb-storage
+          hostPath:
+            path: /storage/mariadb
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # Unique key of the Service instance
+  name: mariadb
+spec:
+  type: NodePort
+  ports:
+    - port: 3306
+      targetPort: 3306
+      nodePort: 30306
+  selector:
+    app: mariadb
+
